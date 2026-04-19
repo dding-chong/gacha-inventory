@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<title>가챠샵 관리</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;max-width:480px;margin:0 auto;min-height:100vh;}
+:root{--ok:#3B6D11;--ok-bg:#EAF3DE;--low:#A32D2D;--low-bg:#FCEBEB;--em:#5F5E5A;--em-bg:#F1EFE8;--blue:#185FA5;--blue-bg:#E6F1FB;}
+.wrap{padding:12px 16px 80px;}
+.page{display:none;}
+.page.on{display:block;}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:#fff;border-top:1px solid #e5e5e5;padding:4px 0 calc(4px + env(safe-area-inset-bottom));}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:none;background:none;cursor:pointer;color:#888;font-size:10px;}
+.nb.on{color:#1a1a1a;font-weight:600;}
+.ph{padding:.6rem 0 .5rem;display:flex;align-items:center;justify-content:space-between;}
+.pt{font-size:16px;font-weight:600;}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.met{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ml{font-size:11px;color:#888;margin-bottom:3px;}
+.mv{font-size:20px;font-weight:700;}
+.ms{font-size:11px;color:#aaa;margin-top:2px;}
+.mcard{background:#fff;border-radius:14px;padding:12px 14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.bar{height:3px;background:#eee;border-radius:2px;margin-top:6px;overflow:hidden;}
+.bf{height:100%;border-radius:2px;}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;justify-content:center;}
+.ov.on{display:flex;}
+.sh{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.sh-title{font-size:16px;font-weight:600;margin-bottom:4px;}
+.sh-sub{font-size:13px;color:#888;margin-bottom:18px;}
+.fl{margin-bottom:12px;}
+.fl label{display:block;font-size:12px;color:#666;margin-bottom:5px;font-weight:500;}
+.fl input,.fl select{width:100%;padding:10px 12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:#fff;color:#1a1a1a;}
+.fl input:focus,.fl select:focus{border-color:#1a1a1a;}
+.br{display:flex;gap:8px;margin-top:16px;}
+.br button{flex:1;padding:12px;border-radius:12px;border:none;font-size:14px;font-weight:600;cursor:pointer;}
+.bp{background:#1a1a1a;color:#fff;}
+.bc{background:#f0f0f0;color:#1a1a1a;}
+.bd{background:var(--low-bg);color:var(--low);}
+.seg{display:flex;gap:3px;background:#efefef;border-radius:10px;padding:3px;margin-bottom:12px;}
+.sg{flex:1;padding:6px;font-size:12px;font-weight:500;text-align:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:#888;}
+.sg.on{background:#fff;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.crow{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.clb{font-size:12px;width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;}
+.ctr{flex:1;height:20px;background:#eee;border-radius:4px;overflow:hidden;}
+.cfi{height:100%;border-radius:4px;}
+.cvl{font-size:12px;color:#888;width:54px;text-align:right;flex-shrink:0;}
+.li{background:#fff;border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
+.toast.on{opacity:1;}
+.cbox{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+.alert{background:var(--low-bg);color:var(--low);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:500;}
+button{cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="page on" id="p-home">
+  <div class="ph">
+    <div>
+      <div class="pt">가챠샵 관리</div>
+      <div style="font-size:11px;color:#aaa;" id="hdr-date"></div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <span style="font-size:11px;" id="sync-lbl"></span>
+      <button style="background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;" onclick="openSh('sh-add')">+ 기계</button>
+    </div>
+  </div>
+  <div id="alert-z"></div>
+  <div class="metrics" id="home-metrics"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <span style="font-size:14px;font-weight:600;">기계 현황</span>
+    <span style="font-size:11px;color:#aaa;">탭 → 재고 입력</span>
+  </div>
+  <div id="home-cards"></div>
+</div>
+
+<div class="page" id="p-input">
+  <div class="ph">
+    <div class="pt">오늘 재고 입력</div>
+    <span style="font-size:11px;color:#aaa;" id="inp-prog"></span>
+  </div>
+  <div id="inp-list"></div>
+</div>
+
+<div class="page" id="p-dash">
+  <div class="ph"><div class="pt">매출 대시보드</div></div>
+  <div class="seg" id="dash-seg">
+    <button class="sg on" onclick="setDash('today',this)">오늘</button>
+    <button class="sg" onclick="setDash('week',this)">이번주</button>
+    <button class="sg" onclick="setDash('month',this)">이번달</button>
+  </div>
+  <div id="dash-body"></div>
+</div>
+
+<div class="page" id="p-stats">
+  <div class="ph"><div class="pt">통계</div></div>
+  <div class="seg" id="stat-seg">
+    <button class="sg on" onclick="setStat('consume',this)">소모량</button>
+    <button class="sg" onclick="setStat('trend',this)">추이</button>
+    <button class="sg" onclick="setStat('refill',this)">보충</button>
+  </div>
+  <div id="stat-body"></div>
+</div>
+
+<div class="page" id="p-log">
+  <div class="ph"><div class="pt">입력 기록</div></div>
+  <div id="log-body"></div>
+</div>
+
+<div class="page" id="p-cfg">
+  <div class="ph"><div class="pt">설정</div></div>
+  <div class="cbox">
+    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">연결 상태</div>
+    <div style="font-size:13px;margin-bottom:10px;" id="cfg-conn">확인 중...</div>
+    <button class="bp" style="width:100%;padding:11px;" onclick="loadAll()">새로고침 / 재연결</button>
+  </div>
+  <div class="cbox">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">부족 기준 설정</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="number" id="thresh-inp" min="5" max="50" style="width:72px;padding:8px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;"/>
+      <span style="font-size:13px;color:#666;">% 이하 → 경고</span>
+      <button onclick="saveThresh()" style="background:#f0f0f0;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;">저장</button>
+    </div>
+  </div>
+  <div class="cbox">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">📱 모바일 설치</div>
+    <div style="font-size:13px;color:#666;line-height:1.8;"><b>아이폰:</b> Safari → 공유버튼 → 홈 화면에 추가<br><b>안드로이드:</b> Chrome → 메뉴(⋮) → 앱 설치</div>
+  </div>
+  <div class="cbox">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">데이터 내보내기</div>
+    <button onclick="exportCSV()" style="width:100%;background:#f0f0f0;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;">CSV 다운로드</button>
+  </div>
+</div>
+
+</div><!-- wrap -->
+
+<div class="nav">
+  <button class="nb on" onclick="go('home',this)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="10" width="7" height="8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="6" width="7" height="12" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2 6l8-4 8 4" stroke="currentColor" stroke-width="1.3"/></svg>홈</button>
+  <button class="nb" onclick="go('input',this)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 10h6M10 7v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>입력</button>
+  <button class="nb" onclick="go('dash',this)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="11" width="4" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="7" width="4" height="11" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="14" y="3" width="4" height="15" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>매출</button>
+  <button class="nb" onclick="go('stats',this)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 15l4-5 4 3 4-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>통계</button>
+  <button class="nb" onclick="go('log',this)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 10h8M4 15h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>기록</button>
+  <button class="nb" onclick="go('cfg',this)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.05 5.05l1.41 1.41M13.54 13.54l1.41 1.41M5.05 14.95l1.41-1.41M13.54 6.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>설정</button>
+</div>
+
+<!-- Sheet: 재고 입력 -->
+<div class="ov" id="sh-stock" onclick="shBg(event,'sh-stock')">
+<div class="sh">
+  <div class="sh-title" id="ss-title"></div>
+  <div class="sh-sub" id="ss-sub"></div>
+  <div class="fl"><label>현재 재고 (개)</label><input type="number" id="ss-stock" min="0" inputmode="numeric"/></div>
+  <div class="fl"><label>최대 용량 (개)</label><input type="number" id="ss-cap" min="1" inputmode="numeric"/></div>
+  <div class="fl"><label>메모 (선택)</label><input type="text" id="ss-memo" placeholder="특이사항..."/></div>
+  <div class="br">
+    <button class="bd" onclick="delMachine()">삭제</button>
+    <button class="bc" onclick="closeSh('sh-stock')">취소</button>
+    <button class="bp" onclick="saveStock()">저장</button>
+  </div>
+</div>
+</div>
+
+<!-- Sheet: 기계 추가 -->
+<div class="ov" id="sh-add" onclick="shBg(event,'sh-add')">
+<div class="sh">
+  <div class="sh-title">새 기계 등록</div>
+  <div class="sh-sub">기계 정보와 가격을 입력하세요</div>
+  <div class="fl"><label>기계 이름</label><input type="text" id="am-name" placeholder="예: A-01, 포켓몬 캡슐"/></div>
+  <div class="fl"><label>종류</label><select id="am-type"><option>캡슐</option><option>카드</option><option>피규어</option><option>뱃지</option><option>스티커</option><option>기타</option></select></div>
+  <div class="fl"><label>최대 용량 (개)</label><input type="number" id="am-cap" placeholder="100" inputmode="numeric"/></div>
+  <div class="fl"><label>초기 재고 (개)</label><input type="number" id="am-stock" placeholder="0" inputmode="numeric"/></div>
+  <div class="fl"><label>개당 매입가 (원) — 재고 1개 원가</label><input type="number" id="am-cost" placeholder="200" inputmode="numeric"/></div>
+  <div class="fl"><label>뽑기 1회 가격 (원) — 손님이 내는 돈</label><input type="number" id="am-sell" placeholder="500" inputmode="numeric"/></div>
+  <div class="br">
+    <button class="bc" onclick="closeSh('sh-add')">취소</button>
+    <button class="bp" onclick="addMachine()">등록</button>
+  </div>
+</div>
+</div>
+
+<!-- Sheet: 가격 수정 -->
+<div class="ov" id="sh-edit" onclick="shBg(event,'sh-edit')">
+<div class="sh">
+  <div class="sh-title" id="ed-title"></div>
+  <div class="sh-sub">가격 정보 수정</div>
+  <div class="fl"><label>개당 매입가 (원)</label><input type="number" id="ed-cost" inputmode="numeric"/></div>
+  <div class="fl"><label>뽑기 1회 가격 (원)</label><input type="number" id="ed-sell" inputmode="numeric"/></div>
+  <div class="br">
+    <button class="bc" onclick="closeSh('sh-edit')">취소</button>
+    <button class="bp" onclick="saveEdit()">저장</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB  = 'https://qvortjxftculpxcdztdy.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2b3J0anhmdGN1bHB4Y2R6dGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTc3MzQsImV4cCI6MjA5MjA5MzczNH0.9l0W6gJDlqBuKY0IZ2_IWukTv-8ZeWnIpXSbMTbfqyI';
+
+let machines=[], logs=[], selId=null, thresh=parseInt(localStorage.getItem('gt')||'20'), statMode='consume', dashMode='today';
+
+async function sb(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY,'Prefer':'return=representation'}};
+  if(body) opts.body=JSON.stringify(body);
+  const res=await fetch(SB+'/rest/v1/'+path,opts);
+  const text=await res.text();
+  if(!res.ok) throw new Error(res.status+': '+text);
+  return text?JSON.parse(text):[];
+}
+
+function toast(msg,dur){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),dur||2500);
+}
+
+function setSync(ok,msg){
+  const dot=`<span class="dot" style="background:${ok?'#3B6D11':'#E24B4A'};"></span>`;
+  const color=ok?'var(--ok)':'var(--low)';
+  document.getElementById('sync-lbl').innerHTML=dot+`<span style="color:${color};font-size:11px;">${msg}</span>`;
+  document.getElementById('cfg-conn').innerHTML=dot+`<span style="color:${color};">${msg}</span>`;
+}
+
+async function loadAll(){
+  setSync(false,'연결 중...');
+  try{
+    const [m,l]=await Promise.all([
+      sb('GET','machines?order=id.asc&select=*'),
+      sb('GET','logs?order=created_at.desc&limit=500&select=*')
+    ]);
+    machines=m; logs=l;
+    setSync(true,'연결됨');
+    renderAll();
+    toast('연결 성공!');
+  }catch(e){
+    setSync(false,'연결 실패');
+    toast('연결 실패: '+e.message,4000);
+    machines=[]; logs=[]; renderAll();
+  }
+}
+
+function st(m){if(m.stock===0)return'empty';return(m.stock/m.cap)<(thresh/100)?'low':'ok';}
+const SC={ok:{c:'var(--ok)',bg:'var(--ok-bg)',t:'정상'},low:{c:'var(--low)',bg:'var(--low-bg)',t:'부족'},empty:{c:'var(--em)',bg:'var(--em-bg)',t:'없음'}};
+
+function renderAll(){renderHome();renderInp();}
+
+function renderHome(){
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  const total=machines.reduce((a,m)=>a+m.stock,0);
+  const cap=machines.reduce((a,m)=>a+m.cap,0);
+  const low=machines.filter(m=>st(m)==='low').length;
+  const empty=machines.filter(m=>st(m)==='empty').length;
+  const pct=cap>0?Math.round(total/cap*100):0;
+  document.getElementById('home-metrics').innerHTML=`
+    <div class="met"><div class="ml">전체 재고</div><div class="mv">${total.toLocaleString()}</div><div class="ms">/ ${cap.toLocaleString()} (${pct}%)</div></div>
+    <div class="met"><div class="ml">기계 수</div><div class="mv">${machines.length}</div><div class="ms">대 운영 중</div></div>
+    <div class="met"><div class="ml" style="color:var(--low);">재고 부족</div><div class="mv" style="color:var(--low);">${low}</div><div class="ms">${thresh}% 미만</div></div>
+    <div class="met"><div class="ml" style="color:var(--em);">재고 없음</div><div class="mv" style="color:var(--em);">${empty}</div><div class="ms">비어있음</div></div>`;
+  const urgent=machines.filter(m=>st(m)!=='ok');
+  document.getElementById('alert-z').innerHTML=urgent.length?`<div class="alert">보충 필요: ${urgent.map(m=>m.name).join(', ')}</div>`:'';
+  document.getElementById('home-cards').innerHTML=machines.length?machines.map(m=>{
+    const s=st(m);const p=m.cap>0?Math.round(m.stock/m.cap*100):0;
+    const bc=s==='ok'?'#639922':s==='low'?'#E24B4A':'#888780';
+    return`<div class="mcard" onclick="openStockSh(${m.id})">
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;">${m.name} <span style="font-size:11px;font-weight:400;color:#aaa;">${m.type}</span></div>
+        <div style="font-size:11px;color:#aaa;margin-top:1px;">매입 ${(m.cost_per_unit||0).toLocaleString()}원 · 판매 ${(m.sell_price||0).toLocaleString()}원/회</div>
+        <div class="bar"><div class="bf" style="width:${p}%;background:${bc};"></div></div>
+      </div>
+      <div style="text-align:right;min-width:54px;">
+        <div style="font-size:18px;font-weight:700;color:${bc};">${m.stock}</div>
+        <div style="font-size:10px;color:#aaa;">/ ${m.cap} (${p}%)</div>
+      </div>
+      <div style="width:5px;height:32px;border-radius:3px;background:${bc};flex-shrink:0;"></div>
+    </div>`;
+  }).join(''):'<div style="text-align:center;padding:3rem 1rem;color:#aaa;font-size:14px;">+ 기계 버튼으로 기계를 추가하세요</div>';
+}
+
+function renderInp(){
+  const today=new Date().toISOString().slice(0,10);
+  const done=new Set(logs.filter(l=>l.created_at&&l.created_at.slice(0,10)===today).map(l=>l.machine_id));
+  document.getElementById('inp-prog').textContent=`${done.size} / ${machines.length} 완료`;
+  document.getElementById('inp-list').innerHTML=machines.map(m=>{
+    const s=st(m);const isDone=done.has(m.id);
+    return`<div style="background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;${isDone?'opacity:0.6':''}box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div>
+        <div style="font-size:14px;font-weight:600;">${m.name} <span style="font-size:11px;font-weight:400;color:#aaa;">${m.type}</span></div>
+        <div style="font-size:12px;color:#888;margin-top:2px;">현재 <b style="color:${SC[s].c};">${m.stock}개</b> / ${m.cap}개</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;">
+        ${isDone?`<span class="badge" style="background:var(--ok-bg);color:var(--ok);">완료</span>`:''}
+        <button onclick="openStockSh(${m.id})" style="background:#f0f0f0;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;">${isDone?'수정':'입력'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setDash(mode,btn){dashMode=mode;document.querySelectorAll('#dash-seg .sg').forEach(s=>s.classList.remove('on'));btn.classList.add('on');renderDash();}
+function renderDash(){
+  const now=new Date();let from;
+  if(dashMode==='today')from=now.toISOString().slice(0,10);
+  else if(dashMode==='week'){const d=new Date(now);d.setDate(d.getDate()-6);from=d.toISOString().slice(0,10);}
+  else from=now.toISOString().slice(0,7)+'-01';
+  const consume={};machines.forEach(m=>consume[m.id]={sold:0,revenue:0,cost:0});
+  const sorted=[...logs].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  const last={};
+  sorted.forEach(l=>{
+    if(last[l.machine_id]!==undefined&&l.created_at.slice(0,10)>=from){
+      const diff=last[l.machine_id]-l.stock;
+      if(diff>0&&consume[l.machine_id]){
+        const m=machines.find(x=>x.id===l.machine_id);
+        consume[l.machine_id].sold+=diff;
+        consume[l.machine_id].revenue+=diff*(m?.sell_price||0);
+        consume[l.machine_id].cost+=diff*(m?.cost_per_unit||0);
+      }
+    }
+    last[l.machine_id]=l.stock;
+  });
+  const tRev=Object.values(consume).reduce((a,v)=>a+v.revenue,0);
+  const tCost=Object.values(consume).reduce((a,v)=>a+v.cost,0);
+  const tSold=Object.values(consume).reduce((a,v)=>a+v.sold,0);
+  const prof=tRev-tCost;
+  const marg=tRev>0?Math.round(prof/tRev*100):0;
+  const lbl=dashMode==='today'?'오늘':dashMode==='week'?'이번주':'이번달';
+  const rows=machines.map(m=>({m,d:consume[m.id]||{sold:0,revenue:0,cost:0}})).sort((a,b)=>b.d.revenue-a.d.revenue);
+  const maxR=Math.max(...rows.map(r=>r.d.revenue),1);
+  document.getElementById('dash-body').innerHTML=`
+    <div class="metrics">
+      <div class="met"><div class="ml">${lbl} 추정 매출</div><div class="mv" style="color:var(--ok);">${tRev.toLocaleString()}원</div><div class="ms">총 ${tSold}개 소모</div></div>
+      <div class="met"><div class="ml">매입 원가</div><div class="mv">${tCost.toLocaleString()}원</div><div class="ms">재고 매입 비용</div></div>
+      <div class="met"><div class="ml">추정 손익</div><div class="mv" style="color:${prof>=0?'var(--ok)':'var(--low)'};">${prof>=0?'+':''}${prof.toLocaleString()}원</div><div class="ms">매출-원가</div></div>
+      <div class="met"><div class="ml">마진율</div><div class="mv" style="color:${marg>=0?'var(--ok)':'var(--low)'};">${marg}%</div><div class="ms">이익/매출</div></div>
+    </div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">기계별 매출</div>
+    ${rows.map(r=>{
+      const pr=r.d.revenue-r.d.cost;
+      return`<div style="background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+          <span style="font-size:14px;font-weight:600;">${r.m.name} <span style="font-size:11px;font-weight:400;color:#aaa;">${r.m.type}</span></span>
+          <button onclick="openEditSh(${r.m.id})" style="background:#f0f0f0;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;">가격 수정</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div><div style="font-size:10px;color:#aaa;">소모</div><div style="font-size:15px;font-weight:700;">${r.d.sold}개</div></div>
+          <div><div style="font-size:10px;color:#aaa;">매출</div><div style="font-size:15px;font-weight:700;color:var(--ok);">${r.d.revenue.toLocaleString()}원</div></div>
+          <div><div style="font-size:10px;color:#aaa;">손익</div><div style="font-size:15px;font-weight:700;color:${pr>=0?'var(--ok)':'var(--low)'};">${pr>=0?'+':''}${pr.toLocaleString()}원</div></div>
+        </div>
+        <div style="height:5px;background:#eee;border-radius:3px;overflow:hidden;"><div style="height:100%;width:${Math.round(r.d.revenue/maxR*100)}%;background:#639922;border-radius:3px;"></div></div>
+        <div style="font-size:10px;color:#aaa;margin-top:4px;">매입 ${r.m.cost_per_unit||0}원/개 · 판매 ${r.m.sell_price||0}원/회</div>
+      </div>`;
+    }).join('')}`;
+}
+
+function setStat(mode,btn){statMode=mode;document.querySelectorAll('#stat-seg .sg').forEach(s=>s.classList.remove('on'));btn.classList.add('on');renderStats();}
+function renderStats(){const el=document.getElementById('stat-body');if(statMode==='consume')el.innerHTML=renderConsume();else if(statMode==='trend')el.innerHTML=renderTrend();else el.innerHTML=renderRefill();}
+function renderConsume(){
+  const c={};machines.forEach(m=>c[m.id]=0);
+  const sorted=[...logs].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));const last={};
+  sorted.forEach(l=>{if(last[l.machine_id]!==undefined){const d=last[l.machine_id]-l.stock;if(d>0)c[l.machine_id]=(c[l.machine_id]||0)+d;}last[l.machine_id]=l.stock;});
+  const rows=machines.map(m=>({m,v:c[m.id]||0})).sort((a,b)=>b.v-a.v);const max=Math.max(...rows.map(r=>r.v),1);
+  const cols=['#185FA5','#378ADD','#85B7EB','#B5D4F4','#E6F1FB'];
+  return`<div style="font-size:12px;color:#888;margin-bottom:10px;">전체 기간 소모량</div>`+rows.map((r,i)=>`<div class="crow"><span class="clb" title="${r.m.name}">${r.m.name}</span><div class="ctr"><div class="cfi" style="width:${Math.round(r.v/max*100)}%;background:${cols[Math.min(i,4)]};"></div></div><span class="cvl">${r.v}개</span></div>`).join('');
+}
+function renderTrend(){
+  const byD={};logs.forEach(l=>{const d=l.created_at?l.created_at.slice(0,10):'';if(!d)return;if(!byD[d])byD[d]={};byD[d][l.machine_id]=l.stock;});
+  const dates=Object.keys(byD).sort().slice(-14);
+  if(!dates.length)return'<div style="padding:2rem;text-align:center;color:#aaa;font-size:13px;">입력 기록이 없습니다</div>';
+  const tots=dates.map(d=>machines.reduce((a,m)=>a+(byD[d][m.id]!==undefined?byD[d][m.id]:0),0));const max=Math.max(...tots,1);
+  return`<div style="font-size:12px;color:#888;margin-bottom:10px;">최근 ${dates.length}일 재고 추이</div>`+dates.map((d,i)=>`<div class="crow"><span class="clb" style="font-size:11px;">${d.slice(5)}</span><div class="ctr"><div class="cfi" style="width:${Math.round(tots[i]/max*100)}%;background:#1D9E75;"></div></div><span class="cvl">${tots[i]}</span></div>`).join('');
+}
+function renderRefill(){
+  const r={};machines.forEach(m=>r[m.id]=0);
+  const sorted=[...logs].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));const last={};
+  sorted.forEach(l=>{if(last[l.machine_id]!==undefined&&l.stock>last[l.machine_id])r[l.machine_id]++;last[l.machine_id]=l.stock;});
+  const rows=machines.map(m=>({m,v:r[m.id]})).sort((a,b)=>b.v-a.v);const max=Math.max(...rows.map(x=>x.v),1);
+  return`<div style="font-size:12px;color:#888;margin-bottom:10px;">기계별 보충 횟수</div>`+rows.map(x=>`<div class="crow"><span class="clb" title="${x.m.name}">${x.m.name}</span><div class="ctr"><div class="cfi" style="width:${Math.round(x.v/max*100)}%;background:#BA7517;"></div></div><span class="cvl">${x.v}회</span></div>`).join('');
+}
+
+function renderLog(){
+  document.getElementById('log-body').innerHTML=logs.slice(0,50).length?logs.slice(0,50).map(l=>{
+    const m=machines.find(x=>x.id===l.machine_id);
+    const s=l.stock===0?'empty':l.stock/(l.cap||1)<thresh/100?'low':'ok';
+    const dt=l.created_at?new Date(l.created_at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+    return`<div class="li"><div><div style="font-size:13px;font-weight:600;">${m?m.name:'삭제됨'} · ${l.stock}개 / ${l.cap}개</div><div style="font-size:11px;color:#888;margin-top:2px;">${dt}${l.memo?' · '+l.memo:''}</div></div><span class="badge" style="background:${SC[s].bg};color:${SC[s].c};">${SC[s].t}</span></div>`;
+  }).join(''):'<div style="text-align:center;padding:2rem;color:#aaa;font-size:13px;">기록이 없습니다</div>';
+}
+
+function go(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+name).classList.add('on');btn.classList.add('on');
+  if(name==='stats')renderStats();if(name==='log')renderLog();if(name==='dash')renderDash();
+}
+
+function openStockSh(id){
+  selId=id;const m=machines.find(x=>x.id===id);
+  document.getElementById('ss-title').textContent=m.name+' 재고 입력';
+  document.getElementById('ss-sub').textContent=m.type+' · 현재 '+m.stock+'개 / '+m.cap+'개';
+  document.getElementById('ss-stock').value=m.stock;document.getElementById('ss-cap').value=m.cap;document.getElementById('ss-memo').value='';
+  openSh('sh-stock');setTimeout(()=>document.getElementById('ss-stock').select(),150);
+}
+function openEditSh(id){
+  selId=id;const m=machines.find(x=>x.id===id);
+  document.getElementById('ed-title').textContent=m.name+' 가격 수정';
+  document.getElementById('ed-cost').value=m.cost_per_unit||0;document.getElementById('ed-sell').value=m.sell_price||0;
+  openSh('sh-edit');
+}
+function openSh(id){document.getElementById(id).classList.add('on');}
+function closeSh(id){document.getElementById(id).classList.remove('on');}
+function shBg(e,id){if(e.target===document.getElementById(id))closeSh(id);}
+
+async function saveStock(){
+  const stock=parseInt(document.getElementById('ss-stock').value)||0;
+  const cap=parseInt(document.getElementById('ss-cap').value)||100;
+  const memo=document.getElementById('ss-memo').value.trim();
+  const m=machines.find(x=>x.id===selId);
+  try{
+    await sb('PATCH',`machines?id=eq.${selId}`,{stock,cap});
+    await sb('POST','logs',{machine_id:selId,stock,cap,memo});
+    m.stock=stock;m.cap=cap;logs.unshift({machine_id:selId,stock,cap,memo,created_at:new Date().toISOString()});
+    closeSh('sh-stock');renderAll();toast('저장 완료!');
+  }catch(e){toast('저장 실패: '+e.message);}
+}
+async function saveEdit(){
+  const cost=parseInt(document.getElementById('ed-cost').value)||0;
+  const sell=parseInt(document.getElementById('ed-sell').value)||0;
+  try{
+    await sb('PATCH',`machines?id=eq.${selId}`,{cost_per_unit:cost,sell_price:sell});
+    const m=machines.find(x=>x.id===selId);m.cost_per_unit=cost;m.sell_price=sell;
+    closeSh('sh-edit');renderAll();renderDash();toast('가격 수정 완료!');
+  }catch(e){toast('수정 실패: '+e.message);}
+}
+async function delMachine(){
+  const m=machines.find(x=>x.id===selId);
+  if(!confirm(m.name+' 기계를 삭제할까요?'))return;
+  try{
+    await sb('DELETE',`machines?id=eq.${selId}`);
+    machines=machines.filter(x=>x.id!==selId);closeSh('sh-stock');renderAll();toast('삭제됐어요');
+  }catch(e){toast('삭제 실패: '+e.message);}
+}
+async function addMachine(){
+  const name=document.getElementById('am-name').value.trim();
+  if(!name){toast('기계 이름을 입력하세요');return;}
+  const body={name,type:document.getElementById('am-type').value,cap:parseInt(document.getElementById('am-cap').value)||100,stock:parseInt(document.getElementById('am-stock').value)||0,cost_per_unit:parseInt(document.getElementById('am-cost').value)||0,sell_price:parseInt(document.getElementById('am-sell').value)||500};
+  try{
+    const res=await sb('POST','machines',body);machines.push(res[0]);
+    closeSh('sh-add');renderAll();toast(name+' 등록됐어요!');
+    ['am-name','am-stock','am-cap','am-cost','am-sell'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){toast('등록 실패: '+e.message);}
+}
+function saveThresh(){thresh=parseInt(document.getElementById('thresh-inp').value)||20;localStorage.setItem('gt',thresh);renderAll();toast(thresh+'% 기준 저장됐어요');}
+function exportCSV(){
+  const rows=[['날짜','기계명','종류','재고','용량','매입가','판매가','메모']];
+  logs.forEach(l=>{const m=machines.find(x=>x.id===l.machine_id);rows.push([l.created_at?new Date(l.created_at).toLocaleString('ko-KR'):'',m?m.name:'삭제됨',m?m.type:'',l.stock,l.cap,m?.cost_per_unit||0,m?.sell_price||0,l.memo||'']);});
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download='gacha_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+document.getElementById('thresh-inp').value=thresh;
+loadAll();
+</script>
+</body>
+</html>
