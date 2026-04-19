@@ -64,7 +64,7 @@ button{cursor:pointer;}
 <div class="page on" id="p-home">
   <div class="ph">
     <div>
-      <div class="pt">가챠샵 관리</div>
+      <div class="pt">pPilL garage</div>
       <div style="font-size:11px;color:#aaa;" id="hdr-date"></div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
@@ -172,11 +172,11 @@ button{cursor:pointer;}
   <div class="sh-title">새 기계 등록</div>
   <div class="sh-sub">기계 정보와 가격을 입력하세요</div>
   <div class="fl"><label>기계 이름</label><input type="text" id="am-name" placeholder="예: A-01, 포켓몬 캡슐"/></div>
-  <div class="fl"><label>종류</label><select id="am-type"><option>캡슐</option><option>카드</option><option>피규어</option><option>뱃지</option><option>스티커</option><option>기타</option></select></div>
+  <div class="fl"><label>종류</label><select id="am-type"><option>캡슐</option><option>카드</option><option>피규어</option><option>뱃지</option><option>스티커</option><option>인형</option><option>키링</option><option>기타</option></select></div>
   <div class="fl"><label>최대 용량 (개)</label><input type="number" id="am-cap" placeholder="100" inputmode="numeric"/></div>
   <div class="fl"><label>초기 재고 (개)</label><input type="number" id="am-stock" placeholder="0" inputmode="numeric"/></div>
   <div class="fl"><label>개당 매입가 (원) — 재고 1개 원가</label><input type="number" id="am-cost" placeholder="200" inputmode="numeric"/></div>
-  <div class="fl"><label>뽑기 1회 가격 (원) — 손님이 내는 돈</label><input type="number" id="am-sell" placeholder="500" inputmode="numeric"/></div>
+  <div class="fl"><label>개당 판매가 (원) — 손님이 내는 돈</label><input type="number" id="am-sell" placeholder="500" inputmode="numeric"/></div>
   <div class="br">
     <button class="bc" onclick="closeSh('sh-add')">취소</button>
     <button class="bp" onclick="addMachine()">등록</button>
@@ -190,7 +190,7 @@ button{cursor:pointer;}
   <div class="sh-title" id="ed-title"></div>
   <div class="sh-sub">가격 정보 수정</div>
   <div class="fl"><label>개당 매입가 (원)</label><input type="number" id="ed-cost" inputmode="numeric"/></div>
-  <div class="fl"><label>뽑기 1회 가격 (원)</label><input type="number" id="ed-sell" inputmode="numeric"/></div>
+  <div class="fl"><label>개당 판매가 (원)</label><input type="number" id="ed-sell" inputmode="numeric"/></div>
   <div class="br">
     <button class="bc" onclick="closeSh('sh-edit')">취소</button>
     <button class="bp" onclick="saveEdit()">저장</button>
