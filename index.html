@@ -889,7 +889,17 @@ function updateSoldPreview(){
   if(coinCount<=0)return;
 
   const revenue=coinCount*1000;
-
+if(
+  m.sell_price>0 &&
+  revenue % m.sell_price !== 0
+){
+  toast(
+    `입력 금액이 상품 가격과 맞지 않습니다\n`+
+    `(상품 ${m.sell_price.toLocaleString()}원 / 입력 ${revenue.toLocaleString()}원)`,
+    4000
+  );
+  return;
+}
   const soldCount=m.sell_price>0
     ?Math.floor(revenue/m.sell_price)
     :0;
