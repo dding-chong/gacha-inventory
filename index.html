@@ -851,22 +851,55 @@ ${new Date(l.created_at).toLocaleString('ko-KR',{
 }
 
 async function deleteLog(id){
+
   const l=logs.find(x=>x.id===id);
-  const {prev}=getLogNeighbors(id);
+
+  if(!l)return;
+
+  const m=machines.find(x=>x.id===l.machine_id);
+
   try{
+
+    // 삭제될 판매수량
+    const restoreCount=l.sold_count||0;
+
+    // 현재 재고 복구
+    const newStock=(m.stock||0)+restoreCount;
+
+    // 로그 삭제
     await sb('DELETE',`logs?id=eq.${id}`);
+
+    // 로컬 로그 제거
     logs=logs.filter(x=>x.id!==id);
-    // 삭제 후 최신 로그로 현재 재고 복원
-    const remaining=[...logs].filter(x=>x.machine_id===l.machine_id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    if(remaining.length){
-      const latest=remaining[0];
-      await sb('PATCH',`machines?id=eq.${l.machine_id}`,{stock:latest.stock,cap:latest.cap});
-      const m=machines.find(x=>x.id===l.machine_id);if(m){m.stock=latest.stock;m.cap=latest.cap;}
-    }
-    closeSh('sh-log-edit');expandedLogId=null;
-    renderLog();renderAll();
-    toast('삭제 완료! 매출이 자동 재계산됐어요');
-  }catch(e){toast('삭제 실패: '+e.message);}
+
+    // machines 재고 복원
+    await sb(
+      'PATCH',
+      `machines?id=eq.${l.machine_id}`,
+      {
+        stock:newStock
+      }
+    );
+
+    // 로컬 machines 반영
+    m.stock=newStock;
+
+    closeSh('sh-log-edit');
+
+    expandedLogId=null;
+
+    renderLog();
+    renderAll();
+
+    toast(
+      `삭제 완료 · 재고 ${restoreCount}개 복구`
+    );
+
+  }catch(e){
+
+    toast('삭제 실패: '+e.message);
+
+  }
 }
 
 /* ── 재고 입력 시트 ── */
@@ -889,15 +922,17 @@ function updateSoldPreview(){
   if(coinCount<=0)return;
 
   const revenue=coinCount*1000;
+  
 if(
   m.sell_price>0 &&
   revenue % m.sell_price !== 0
 ){
-  toast(
-    `입력 금액이 상품 가격과 맞지 않습니다\n`+
-    `(상품 ${m.sell_price.toLocaleString()}원 / 입력 ${revenue.toLocaleString()}원)`,
-    4000
-  );
+  warn.innerHTML=`
+    상품 가격과 맞지 않는 금액입니다
+    <br>
+    (${m.sell_price.toLocaleString()}원 단위)
+  `;
+  warn.classList.add('on');
   return;
 }
   const soldCount=m.sell_price>0
@@ -967,11 +1002,24 @@ async function saveStock(){
   try{
     // 코인 → 금액
     const revenue=coinCount*1000;
+// 금액 검증
+if(
+  m.sell_price>0 &&
+  revenue % m.sell_price !== 0
+){
+  toast(
+    `상품 가격 단위가 맞지 않습니다\n`+
+    `(상품 ${m.sell_price.toLocaleString()}원 / 입력 ${revenue.toLocaleString()}원)\n`+
+    `코인 개수를 다시 확인해주세요.`,
+    4000
+  );
+  return;
+}
 
-    // 판매 개수 계산
-    const soldCount=m.sell_price>0
-      ?Math.floor(revenue/m.sell_price)
-      :0;
+// 판매 개수 계산
+const soldCount=Math.floor(
+  revenue/m.sell_price
+);
 
     // 재고 자동 차감
     const stock=Math.max(0,m.stock-soldCount);
