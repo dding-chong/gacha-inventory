@@ -98,6 +98,16 @@ button{cursor:pointer;}
     </div>
   </div>
   <div id="alert-z"></div>
+  <div style="display:flex;gap:6px;margin-bottom:10px;">
+  <button class="dq on" id="sort-custom"
+    onclick="setSortMode('custom')">사용자순</button>
+
+  <button class="dq" id="sort-asc"
+    onclick="setSortMode('asc')">이름↑</button>
+
+  <button class="dq" id="sort-desc"
+    onclick="setSortMode('desc')">이름↓</button>
+</div>
   <div class="metrics" id="home-metrics"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
     <span style="font-size:14px;font-weight:600;">상품 현황</span>
@@ -313,7 +323,10 @@ const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 
 let machines=[], logs=[], priceHistory=[];
 let selId=null, selLogId=null, expandedLogId=null;
-let thresh=parseInt(localStorage.getItem('gt')||'20'), statMode='consume', dashMode='today';
+let thresh=parseInt(localStorage.getItem('gt')||'20'),
+    statMode='consume',
+    dashMode='today',
+    sortMode='custom';
 let selectedInputDate=new Date().toISOString().slice(0,10);
 
 async function sb(method,path,body){
@@ -326,7 +339,27 @@ async function sb(method,path,body){
 }
 
 function toast(msg,dur=2500){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),dur);}
+function setSortMode(mode){
 
+  sortMode=mode;
+
+  document.querySelectorAll('#sort-custom,#sort-asc,#sort-desc')
+    .forEach(b=>b.classList.remove('on'));
+
+  if(mode==='custom'){
+    document.getElementById('sort-custom').classList.add('on');
+  }
+
+  if(mode==='asc'){
+    document.getElementById('sort-asc').classList.add('on');
+  }
+
+  if(mode==='desc'){
+    document.getElementById('sort-desc').classList.add('on');
+  }
+
+  renderHome();
+}
 function setSync(ok,msg){
   const dot=`<span class="dot" style="background:${ok?'#3B6D11':'#E24B4A'};"></span>`;
   const c=ok?'var(--ok)':'var(--low)';
@@ -376,9 +409,25 @@ function renderHome(){
     : '';
 
   // 여기 추가 ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+  if(sortMode==='custom'){
+
   machines.sort((a,b)=>
     (a.sort_order||0)-(b.sort_order||0)
   );
+
+}else if(sortMode==='asc'){
+
+  machines.sort((a,b)=>
+    a.name.localeCompare(b.name,'ko')
+  );
+
+}else if(sortMode==='desc'){
+
+  machines.sort((a,b)=>
+    b.name.localeCompare(a.name,'ko')
+  );
+
+}
   document.getElementById('home-cards').innerHTML=machines.length?machines.map(m=>{
     const s=st(m);const p=m.cap>0?Math.round(m.stock/m.cap*100):0;
     const bc=s==='ok'?'#639922':s==='low'?'#E24B4A':'#888780';
