@@ -256,18 +256,10 @@ button{cursor:pointer;}
     </div>
   </div>
   <div class="fl"><label>입력 날짜</label><input type="date" id="ss-date"/></div>
-<div class="fi">
-  <label>오늘 들어온 코인 수</label>
-
-  <input
-    id="ss-coin"
-    type="number"
-    inputmode="numeric"
-    placeholder="예: 10"
-    oninput="updateSoldPreview()">
-
-  <div id="sold-preview" class="sold-preview"></div>
-</div>
+  <div class="fl">
+    <label>현재 재고 (개)</label>
+    <input type="number" id="ss-stock" min="0" inputmode="numeric" oninput="updateSoldPreview()"/>
+  </div>
   <div class="sold-preview" id="sold-preview"></div>
   <div class="sold-warn" id="sold-warn"></div>
   <div class="fl"><label>최대 용량 (개)</label><input type="number" id="ss-cap" min="1" inputmode="numeric"/></div>
@@ -524,43 +516,22 @@ function renderInp(){
 
 /* ── 매출 계산 핵심 (재고 차이 기반) ── */
 function calcConsume(from){
-
   const consume={};
-
-  machines.forEach(m=>
-    consume[m.id]={
-      sold:0,
-      revenue:0,
-      cost:0
+  machines.forEach(m=>consume[m.id]={sold:0,revenue:0,cost:0});
+  const sorted=[...logs].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  const last={};
+  sorted.forEach(l=>{
+    if(last[l.machine_id]!==undefined){
+      const diff=last[l.machine_id]-l.stock;
+      if(diff>0&&l.created_at.slice(0,10)>=from&&consume[l.machine_id]){
+        const m=machines.find(x=>x.id===l.machine_id);
+        consume[l.machine_id].sold+=diff;
+        consume[l.machine_id].revenue+=diff*(m?.sell_price||0);
+        consume[l.machine_id].cost+=diff*(m?.cost_per_unit||0);
+      }
     }
-  );
-
-  logs.forEach(l=>{
-
-    if(
-      l.created_at.slice(0,10)>=from &&
-      consume[l.machine_id]
-    ){
-
-      const m=
-        machines.find(
-          x=>x.id===l.machine_id
-        );
-
-      consume[l.machine_id].sold+=
-        l.sold_count||0;
-
-      consume[l.machine_id].revenue+=
-        l.revenue||0;
-
-      consume[l.machine_id].cost+=
-        (l.sold_count||0)*
-        (m?.cost_per_unit||0);
-
-    }
-
+    last[l.machine_id]=l.stock;
   });
-
   return consume;
 }
 
@@ -829,51 +800,21 @@ async function deleteLog(id){
 
 /* ── 재고 입력 시트 ── */
 function updateSoldPreview(){
-const stock=parseInt(document.getElementById('ss-stock').value)||0;
-  const coin=
-    parseInt(
-      document.getElementById('ss-coin').value
-    ) || 0;
-
-  const m=
-    machines.find(x=>x.id===selId);
-  const sold=Math.max(0,m.stock-stock);
-
-const revenue=coin*1000;
-  if(!m)return;
-
-  const coinPerPlay=
-    Math.max(
-      1,
-      Math.round((m.sell_price||1000)/1000)
-    );
-
-  const sold=
-    Math.floor(coin/coinPerPlay);
-
-  const revenue=coin*1000;
-
-  const nextStock=
-    Math.max(0,m.stock-sold);
-
-  document.getElementById('sold-preview').innerHTML=`
-    <div>
-      사용코인: <b>${coin}개</b>
-    </div>
-
-    <div>
-      판매개수: <b>${sold}개</b>
-    </div>
-
-    <div>
-      예상매출: <b>${revenue.toLocaleString()}원</b>
-    </div>
-
-    <div>
-      남은재고: <b>${nextStock}개</b>
-    </div>
-  `;
+  const m=machines.find(x=>x.id===selId);if(!m)return;
+  const newStock=parseInt(document.getElementById('ss-stock').value);
+  const prev=document.getElementById('sold-preview');
+  const warn=document.getElementById('sold-warn');
+  if(isNaN(newStock)){prev.classList.remove('on');warn.classList.remove('on');return;}
+  const sold=m.stock-newStock;
+  if(sold>0){
+    prev.innerHTML=`판매 <b>${sold}개</b> · 예상 매출 <b>${(sold*(m.sell_price||0)).toLocaleString()}원</b>`;
+    prev.classList.add('on');warn.classList.remove('on');
+  }else if(sold<0){
+    warn.innerHTML=`재고 <b>${Math.abs(sold)}개 증가</b> → 보충으로 기록됩니다`;
+    warn.classList.add('on');prev.classList.remove('on');
+  }else{prev.classList.remove('on');warn.classList.remove('on');}
 }
+
 function openStockSh(id){
   selId=id;const m=machines.find(x=>x.id===id);
   document.getElementById('ss-title').textContent=m.name+' 재고 입력';
@@ -905,35 +846,13 @@ function openStockSh(id){
 }
 
 async function saveStock(){
-async function saveStock(){
-
-  const coin=
-    parseInt(
-      document.getElementById('ss-coin').value
-    ) || 0;
-
-  const cap=
-    parseInt(
-      document.getElementById('ss-cap').value
-    ) || 100;
+  const stock=parseInt(document.getElementById('ss-stock').value)||0;
+  const cap=parseInt(document.getElementById('ss-cap').value)||100;
   const memo=document.getElementById('ss-memo').value.trim();
   const dateVal=document.getElementById('ss-date').value||selectedInputDate;
   const isToday=dateVal===new Date().toISOString().slice(0,10);
   const created_at=isToday?new Date().toISOString():dateVal+'T23:59:00.000Z';
   const m=machines.find(x=>x.id===selId);
-  const coinPerPlay=
-  Math.max(
-    1,
-    Math.round((m.sell_price||1000)/1000)
-  );
-
-const sold=
-  Math.floor(coin/coinPerPlay);
-
-const revenue=coin*1000;
-
-const stock=
-  Math.max(0,m.stock-sold);
   try{
     // 이미지 변경 있으면 업로드
     const imgFile=document.getElementById('ss-img').files[0];
@@ -943,20 +862,8 @@ const stock=
       catch(e){toast('사진 업로드 실패, 재고는 저장됩니다',3000);}
     }
     const patch={stock,cap};if(image_url!==m.image_url)patch.image_url=image_url;
-    await sb('POST','logs',{
-  machine_id:selId,
-
-  stock:newStock,
-  cap:m.cap,
-
-  coin_count:coin,
-
-  sold_count:sold,
-
-  revenue,
-
-  created_at:new Date().toISOString()
-});
+    await sb('PATCH',`machines?id=eq.${selId}`,patch);
+    const rec=await sb('POST','logs',{machine_id:selId,stock,cap,memo,created_at});
     m.stock=stock;m.cap=cap;if(image_url)m.image_url=image_url;
     if(rec&&rec[0])logs.unshift(rec[0]);
     else logs.unshift({machine_id:selId,stock,cap,memo,created_at,id:Date.now()});
