@@ -65,6 +65,8 @@ button{cursor:pointer;}
 .log-item{background:#fff;border-radius:12px;padding:11px 14px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.05);}
 .log-item-head{display:flex;align-items:center;justify-content:space-between;}
 .log-item-body{font-size:11px;color:#888;margin-top:3px;}
+.machine-card{cursor:grab;}
+.machine-card:active{cursor:grabbing;opacity:.7;}  
 .log-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;}
 .log-expand{width:100%;background:none;border:none;text-align:left;padding:0;color:inherit;}
 .sold-preview{background:var(--ok-bg);border-radius:8px;padding:9px 12px;margin-top:6px;font-size:13px;color:var(--ok);display:none;}
@@ -368,10 +370,22 @@ function renderHome(){
     <div class="met"><div class="ml" style="color:var(--em);">재고 없음</div><div class="mv" style="color:var(--em);">${empty}</div><div class="ms">비어있음</div></div>`;
   const urgent=machines.filter(m=>st(m)!=='ok');
   document.getElementById('alert-z').innerHTML=urgent.length?`<div class="alert">보충 필요: ${urgent.map(m=>m.name).join(', ')}</div>`:'';
+  document.getElementById('alert-z').innerHTML=
+    urgent.length
+    ? `<div class="alert">보충 필요: ${urgent.map(m=>m.name).join(', ')}</div>`
+    : '';
+
+  // 여기 추가 ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+  machines.sort((a,b)=>
+    (a.sort_order||0)-(b.sort_order||0)
+  );
   document.getElementById('home-cards').innerHTML=machines.length?machines.map(m=>{
     const s=st(m);const p=m.cap>0?Math.round(m.stock/m.cap*100):0;
     const bc=s==='ok'?'#639922':s==='low'?'#E24B4A':'#888780';
-    return`<div class="mcard" onclick="openStockSh(${m.id})">
+   return`<div class="mcard machine-card"
+            draggable="true"
+            data-id="${m.id}"
+            onclick="openStockSh(${m.id})">
       ${m.image_url?`<img src="${m.image_url}" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;"/>`:`<div style="width:52px;height:52px;border-radius:10px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:600;">${m.name} <span style="font-size:11px;font-weight:400;color:#aaa;">${m.type}</span></div>
@@ -529,7 +543,7 @@ function renderPriceHistory(){
   const byM={};machines.forEach(m=>{byM[m.id]={name:m.name,type:m.type,rows:[]};});
   priceHistory.forEach(p=>{if(byM[p.machine_id])byM[p.machine_id].rows.push(p);});
   return Object.values(byM).filter(x=>x.rows.length).map(x=>`
-    <div class="cbox">
+    <div class="cbox machine-card" draggable="true" data-id="${m.id}">
       <div style="font-size:14px;font-weight:600;margin-bottom:8px;">${x.name} <span style="font-size:11px;font-weight:400;color:#aaa;">${x.type}</span></div>
       <div class="price-hist">${x.rows.map(p=>{
         const dt=p.created_at?new Date(p.created_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}):'';
@@ -931,6 +945,56 @@ function exportCSV(){
 document.getElementById('inp-date').addEventListener('change',function(){setInputDate(this.value);});
 document.getElementById('thresh-inp').value=thresh;
 loadAll();
+let dragId=null;
+
+document.addEventListener('dragstart',e=>{
+  const card=e.target.closest('.machine-card');
+  if(!card)return;
+  dragId=card.dataset.id;
+});
+
+document.addEventListener('dragover',e=>{
+  if(e.target.closest('.machine-card')){
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('drop',async e=>{
+  const target=e.target.closest('.machine-card');
+  if(!target||!dragId)return;
+
+  const targetId=target.dataset.id;
+
+  if(dragId===targetId)return;
+
+  const fromIndex=machines.findIndex(m=>m.id==dragId);
+  const toIndex=machines.findIndex(m=>m.id==targetId);
+
+  const moved=machines.splice(fromIndex,1)[0];
+  machines.splice(toIndex,0,moved);
+
+  machines.forEach((m,i)=>{
+    m.sort_order=i;
+  });
+
+  renderAll();
+
+  try{
+    await Promise.all(
+      machines.map(m=>
+        sb(
+          'PATCH',
+          `machines?id=eq.${m.id}`,
+          {sort_order:m.sort_order}
+        )
+      )
+    );
+
+    toast('순서 저장 완료!');
+  }catch(err){
+    toast('순서 저장 실패');
+  }
+});  
 </script>
 </body>
 </html>
