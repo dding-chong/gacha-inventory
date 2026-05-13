@@ -829,7 +829,7 @@ async function deleteLog(id){
 
 /* ── 재고 입력 시트 ── */
 function updateSoldPreview(){
-
+const stock=parseInt(document.getElementById('ss-stock').value)||0;
   const coin=
     parseInt(
       document.getElementById('ss-coin').value
@@ -837,7 +837,9 @@ function updateSoldPreview(){
 
   const m=
     machines.find(x=>x.id===selId);
+  const sold=Math.max(0,m.stock-stock);
 
+const revenue=coin*1000;
   if(!m)return;
 
   const coinPerPlay=
