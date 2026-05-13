@@ -371,20 +371,10 @@ function setSortMode(mode){
 
   sortMode=mode;
 
-  document.querySelectorAll('#sort-custom,#sort-asc,#sort-desc')
-    .forEach(b=>b.classList.remove('on'));
-
-  if(mode==='custom'){
-    document.getElementById('sort-custom').classList.add('on');
-  }
-
-  if(mode==='asc'){
-    document.getElementById('sort-asc').classList.add('on');
-  }
-
-  if(mode==='desc'){
-    document.getElementById('sort-desc').classList.add('on');
-  }
+  localStorage.setItem(
+    'sortMode',
+    mode
+  );
 
   renderHome();
 }
@@ -418,6 +408,13 @@ function renderAll(){renderHome();renderInp();}
 
 /* ── 홈 ── */
 function renderHome(){
+
+  const sortSel=document.getElementById('sort-select');
+
+  if(sortSel){
+    sortSel.value=sortMode;
+  }
+
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   const total=machines.reduce((a,m)=>a+m.stock,0);
   const cap=machines.reduce((a,m)=>a+m.cap,0);
@@ -430,7 +427,6 @@ function renderHome(){
     <div class="met"><div class="ml" style="color:var(--low);">재고 부족</div><div class="mv" style="color:var(--low);">${low}</div><div class="ms">${thresh}% 미만</div></div>
     <div class="met"><div class="ml" style="color:var(--em);">재고 없음</div><div class="mv" style="color:var(--em);">${empty}</div><div class="ms">비어있음</div></div>`;
   const urgent=machines.filter(m=>st(m)!=='ok');
-  document.getElementById('alert-z').innerHTML=urgent.length?`<div class="alert">보충 필요: ${urgent.map(m=>m.name).join(', ')}</div>`:'';
   document.getElementById('alert-z').innerHTML=
     urgent.length
     ? `<div class="alert">보충 필요: ${urgent.map(m=>m.name).join(', ')}</div>`
