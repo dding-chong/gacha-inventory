@@ -1080,29 +1080,46 @@ async function saveStock(){
 
   try{
     // 코인 → 금액
-    const revenue=coinCount*1000;
-// 금액 검증
-if(
-  m.sell_price>0 &&
-  revenue % m.sell_price !== 0
-){
-  toast(
-    `상품 가격 단위가 맞지 않습니다\n`+
-    `(상품 ${m.sell_price.toLocaleString()}원 / 입력 ${revenue.toLocaleString()}원)\n`+
-    `코인 개수를 다시 확인해주세요.`,
-    4000
+   let stock=parseInt(
+  document.getElementById('ss-stock').value
+)||0;
+
+// 기본값
+let revenue=0;
+let soldCount=0;
+
+// 코인 입력 시만 판매 계산
+if(coinCount>0){
+
+  // 코인 → 금액
+  revenue=coinCount*1000;
+
+  // 금액 검증
+  if(
+    m.sell_price>0 &&
+    revenue % m.sell_price !== 0
+  ){
+    toast(
+      `상품 가격 단위가 맞지 않습니다\n`+
+      `(상품 ${m.sell_price.toLocaleString()}원 / 입력 ${revenue.toLocaleString()}원)\n`+
+      `코인 개수를 다시 확인해주세요.`,
+      4000
+    );
+
+    return;
+  }
+
+  // 판매 개수 계산
+  soldCount=Math.floor(
+    revenue/m.sell_price
   );
-  return;
+
+  // 자동 재고 차감
+  stock=Math.max(
+    0,
+    m.stock-soldCount
+  );
 }
-
-// 판매 개수 계산
-const soldCount=Math.floor(
-  revenue/m.sell_price
-);
-
-    // 재고 자동 차감
-    const stock=Math.max(0,m.stock-soldCount);
-
     // 이미지 처리
     const imgFile=document.getElementById('ss-img').files[0];
     let image_url=m.image_url||null;
