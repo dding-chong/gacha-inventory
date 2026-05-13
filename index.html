@@ -442,13 +442,21 @@ function renderHome(){
 }else if(sortMode==='asc'){
 
   machines.sort((a,b)=>
-    a.name.localeCompare(b.name,'ko')
+    a.name.localeCompare(
+      b.name,
+      'ko',
+      {numeric:true}
+    )
   );
 
 }else if(sortMode==='desc'){
 
   machines.sort((a,b)=>
-    b.name.localeCompare(a.name,'ko')
+    b.name.localeCompare(
+      a.name,
+      'ko',
+      {numeric:true}
+    )
   );
 
 }
